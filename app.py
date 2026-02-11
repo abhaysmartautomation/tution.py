@@ -3,79 +3,94 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# --- 🏫 CONFIGURATION ---
-INSTITUTE_NAME = "🎓 PRINCE CLASSES"
-ADMISSION_CONTACT = "📞 9876543210 (Prince Sir)"
+# --- 🏫 ACADEMY SETTINGS ---
+INSTITUTE_NAME = "🌟 *PRINCE ACADEMY* 🌟"
+CONTACT_NO = "+91 98765-43210"
+TIMING = "🕘 08:00 AM - 🕗 08:00 PM"
+UPI_ID = "princeacademy@upi" # Aapki UPI ID
+PAYMENT_NAME = "Prince Academy"
 
-# --- 🧠 MAX KEYWORDS (Bot ka dimaag) ---
-KEYWORDS = {
-    'hello': ['hi', 'hello', 'hey', 'start', 'namaste', 'shuru', 'hlw', 'prince', 'sir', 'online', 'bot'],
-    'time': ['time', 'tym', 'tiem', 'schedule', 'routine', 'kab', 'timing', 'lecture', 'period', 'table', 'ghadi', 'vakt'],
-    'exam': ['exam', 'test', 'paper', 'pariksha', 'result', 'marks', 'date sheet', 'syllabus', 'viva', 'test plan'],
-    'admission': ['admission', 'join', 'new', 'naya', 'enquiry', 'inquiry', 'office', 'contact', 'admission process'],
-    'fee': ['fee', 'fees', 'paise', 'money', 'payment', 'khatam', 'dues']
-}
-
+# --- 🖼️ IMAGE GENERATOR ---
 def get_image_link(text):
     clean_text = text.replace(" ", "+")
     return f"https://placehold.co/600x800/png?text={clean_text}&font=roboto"
 
 @app.route('/')
 def home():
-    return "🦁 Prince Classes Bot is Running Non-Stop!"
+    return "🦁 Prince Academy Bot is Online & Debugged!"
 
 @app.route('/whatsapp', methods=['GET', 'POST'])
 def whatsapp_reply():
-    incoming_msg = request.args.get('msg', '').lower().strip()
+    # User message clean up
+    msg = request.args.get('msg', '').lower().strip()
     
-    # 1. Class Check (6 to 12)
+    # 1️⃣ START / MENU
+    if msg in ['hi', 'hello', 'hey', 'start', 'menu', 'namaste']:
+        return (f"{INSTITUTE_NAME}\n\n"
+                "Hello! Main *Prince Academy* ka smart assistant hoon. 🤖\n"
+                "Aapko kaise sahayata chahiye?\n\n"
+                "📚 *CLASSES INFO (6-12)*\n"
+                "👉 Type karein: *6, 7, 8, 9, 10, 11 ya 12*\n\n"
+                "💳 *PAYMENT & FEES*\n"
+                "👉 Type karein: *Payment*\n\n"
+                "❓ *QUERY & ADMISSION*\n"
+                "👉 Type karein: *Query*")
+
+    # 2️⃣ PAYMENT & FEES SYSTEM 💳
+    if 'payment' in msg or 'fees' in msg or 'pay' in msg:
+        return (f"💳 *PAYMENT INFORMATION*\n"
+                f"---------------------------\n"
+                f"Aap apni fees niche diye gaye options se jama kar sakte hain:\n\n"
+                f"🆔 *UPI ID:* `{UPI_ID}`\n"
+                f"👤 *Name:* {PAYMENT_NAME}\n\n"
+                f"💰 *GPay/PhonePe:* {CONTACT_NO}\n"
+                f"⚠️ *Note:* Payment ke baad screenshot isi number par bhej dein.\n\n"
+                f"🔗 *Payment QR:* {get_image_link('SCAN+TO+PAY+FEES')}")
+
+    # 3️⃣ QUERY & ADMISSION HELP 📞
+    if 'query' in msg or 'admission' in msg or 'help' in msg:
+        return (f"📞 *HELP DESK & ADMISSION*\n"
+                f"---------------------------\n"
+                f"📍 *Location:* Prince Classes, Main Road.\n"
+                f"⏰ *Timing:* {TIMING}\n"
+                f"📱 *Call:* {CONTACT_NO}\n\n"
+                f"📑 *Online Admission Form:* \n"
+                f"https://forms.gle/DemoAdmissionForm\n\n"
+                f"Main menu ke liye *Hi* likhein.")
+
+    # 4️⃣ CLASS SELECTION LOGIC
+    classes = ['6', '7', '8', '9', '10', '11', '12']
+    
+    # Check for direct class number (e.g., "10")
+    if msg in classes:
+        return (f"📂 *CLASS {msg} MENU*\n"
+                f"---------------------------\n"
+                f"Kya dekhna chahte hain? Type karein:\n\n"
+                f"📝 *Exam {msg}* (Exam Info)\n"
+                f"📅 *Schedule {msg}* (Routine)\n"
+                f"🕒 *Time {msg}* (Time Table)")
+
+    # 5️⃣ DETAILED CLASS INFO (e.g., "Time 10")
     detected_class = None
-    for num in ['6', '7', '8', '9', '10', '11', '12']:
-        if num in incoming_msg:
-            detected_class = num
+    for c in classes:
+        if c in msg:
+            detected_class = c
             break
+            
+    if detected_class:
+        if 'exam' in msg:
+            return f"📝 *Class {detected_class} Exam Plan:*\nDownload: {get_image_link(f'Class+{detected_class}+Exam+Plan')}"
+        elif 'schedule' in msg:
+            return f"📅 *Class {detected_class} Regular Schedule:*\nDownload: {get_image_link(f'Class+{detected_class}+Schedule')}"
+        elif 'time' in msg:
+            return f"🕒 *Class {detected_class} Time Table:*\nDownload: {get_image_link(f'Class+{detected_class}+Time+Table')}"
 
-    # 2. Keyword Check
-    topic = None
-    for key, word_list in KEYWORDS.items():
-        if any(word in incoming_msg for word in word_list):
-            topic = key
-            break
-
-    # 3. Decision Logic
-    if topic == 'hello':
-        return (f"👋 Namaste! Welcome to *{INSTITUTE_NAME}*.\n\n"
-                "Mai aapka digital sahayak hu. 🤖\n"
-                "Aapko kis class ki jankari chahiye?\n"
-                "*(Example: Class 10 ya Time 11 likhein)*\n\n"
-                "📌 Humare paas Class 6 se 12 tak ki coaching available hai.")
-
-    elif topic == 'admission':
-        return (f"🏛️ *Admission Helpline*\n\n"
-                "Naye admission ke liye niche diye number par call karein ya office aayein:\n"
-                f"{ADMISSION_CONTACT}\n"
-                "📍 *Address:* Prince Classes, Main Road, Adajan, Surat.")
-
-    elif detected_class:
-        if topic == 'time':
-            link = get_image_link(f"Class+{detected_class}+Time+Table")
-            return f"📅 *Class {detected_class} Time Table:*\nDownload Link: {link}"
-        elif topic == 'exam':
-            link = get_image_link(f"Class+{detected_class}+Exam+Schedule")
-            return f"📝 *Class {detected_class} Exam Dates:*\nCheck here: {link}"
-        else:
-            return (f"📂 *Class {detected_class} Information*\n\n"
-                    f"Aap kya dekhna chahte hain?\n"
-                    f"👉 *Time {detected_class}* (Schedule ke liye)\n"
-                    f"👉 *Exam {detected_class}* (Exam plan ke liye)")
-
-    # 4. Fallback (Jab kuch samajh na aaye)
-    else:
-        return ("⚠️ *Maaf karein, mujhe samajh nahi aaya.*\n\n"
-                "Kripya niche diye gaye tareeke se reply karein:\n"
-                "✅ *Hi* (Menu dekhne ke liye)\n"
-                "✅ *Time 10* (Schedule ke liye)\n"
-                "✅ *Admission* (Naye admission ke liye)")
+    # 6️⃣ SMART FALLBACK (Unknown Message)
+    return ("⚠️ *Maaf karein!* Mujhse galti ho gayi.\n\n"
+            "Kripya sahi word likhein ya niche options dekhein:\n"
+            "✅ *Hi* - Main Menu\n"
+            "✅ *10* - Class 10 Info\n"
+            "✅ *Payment* - Fees details")
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
