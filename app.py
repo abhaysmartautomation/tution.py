@@ -3,95 +3,80 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# --- 1. SETTINGS (Yahan asli data hai) ---
+# --- 🏫 CONFIGURATION ---
+INSTITUTE_NAME = "🎓 PRINCE CLASSES"
+ADMISSION_CONTACT = "📞 9876543210 (Prince Sir)"
 
-COACHING_NAME = "Uday Reloaded Classes (11th)"
+# --- 🧠 MAX KEYWORDS (Bot ka dimaag) ---
+KEYWORDS = {
+    'hello': ['hi', 'hello', 'hey', 'start', 'namaste', 'shuru', 'hlw', 'prince', 'sir', 'online', 'bot'],
+    'time': ['time', 'tym', 'tiem', 'schedule', 'routine', 'kab', 'timing', 'lecture', 'period', 'table', 'ghadi', 'vakt'],
+    'exam': ['exam', 'test', 'paper', 'pariksha', 'result', 'marks', 'date sheet', 'syllabus', 'viva', 'test plan'],
+    'admission': ['admission', 'join', 'new', 'naya', 'enquiry', 'inquiry', 'office', 'contact', 'admission process'],
+    'fee': ['fee', 'fees', 'paise', 'money', 'payment', 'khatam', 'dues']
+}
 
-# ✅ Asli Time Table
-TIMETABLE = """📅 *Class Schedule:*
+def get_image_link(text):
+    clean_text = text.replace(" ", "+")
+    return f"https://placehold.co/600x800/png?text={clean_text}&font=roboto"
 
-• *Monday:* - Maths (5:00 PM)
-  - Physics (7:00 PM)
-
-• *Tuesday:* - Physics (3:00 PM)
-  - Physical Education (9:00 PM)
-
-• *Wednesday:* No Class (Enjoy! 🏖️)
-
-• *Thu - Sat:* - Computer Science (9:00 PM)
-
-• *Sunday:* Test (Time Sir confirm karenge)"""
-
-# ⚠️ Yahan apna PDF wala Test Plan likh dena
-TEST_PLAN = """📝 *Upcoming Test Plan:*
-Abhi koi naya test announce nahi hua hai.
-(Kripya Group check karein ya Sir se puchein.)"""
-
-# ⚠️ Fees aur Address yahan update karein
-FEES_INFO = "💰 *Fees Info:* Contact Sir directly for Class 11th/12th Package details."
-ADDRESS = "📍 *Location:* Vesu, Surat (Paas wali building ka naam daalein)."
-NOTES_LINK = "📚 *Notes Download:* https://drive.google.com/..."
-
-# --- 2. SERVER KEEP-ALIVE (Taaki bot soye nahi) ---
 @app.route('/')
 def home():
-    return "🦁 Uday Reloaded Bot is Awake & Running!"
+    return "🦁 Prince Classes Bot is Running Non-Stop!"
 
-# --- 3. WHATSAPP BRAIN (Dimag) ---
 @app.route('/whatsapp', methods=['GET', 'POST'])
 def whatsapp_reply():
-    try:
-        # Message nikalo
-        incoming_msg = request.args.get('msg', '')
+    incoming_msg = request.args.get('msg', '').lower().strip()
+    
+    # 1. Class Check (6 to 12)
+    detected_class = None
+    for num in ['6', '7', '8', '9', '10', '11', '12']:
+        if num in incoming_msg:
+            detected_class = num
+            break
 
-        # 🛠️ FIX: Agar message Empty hai (Sticker/Photo)
-        if not incoming_msg:
-            return "🤖 *Auto-Reply:* \nMessage khali tha (Sticker/Photo?).\nPlease *TEXT* likhkar bhejein."
+    # 2. Keyword Check
+    topic = None
+    for key, word_list in KEYWORDS.items():
+        if any(word in incoming_msg for word in word_list):
+            topic = key
+            break
 
-        msg = incoming_msg.lower().strip()
-        
-        # --- LOGIC BEGINS ---
-        
-        # 1. Greeting (Namaste/Hi)
-        if msg in ['hi', 'hello', 'hey', 'namaste', 'start', 'hii', 'hy']:
-            return (f"👋 Welcome to *{COACHING_NAME}*!\n\n"
-                    "Main aapki kya help karu?\n👇 Ye type karein:\n\n"
-                    "👉 *Time* (Schedule dekhne ke liye)\n"
-                    "👉 *Test* (Test Plan ke liye)\n"
-                    "👉 *Notes* (PDFs ke liye)\n"
-                    "👉 *Fee* (Fees info)\n"
-                    "👉 *Address* (Location)")
+    # 3. Decision Logic
+    if topic == 'hello':
+        return (f"👋 Namaste! Welcome to *{INSTITUTE_NAME}*.\n\n"
+                "Mai aapka digital sahayak hu. 🤖\n"
+                "Aapko kis class ki jankari chahiye?\n"
+                "*(Example: Class 10 ya Time 11 likhein)*\n\n"
+                "📌 Humare paas Class 6 se 12 tak ki coaching available hai.")
 
-        # 2. Time Table (Schedule)
-        elif any(word in msg for word in ['time', 'kab', 'schedule', 'class', 'routine']):
-            return TIMETABLE
+    elif topic == 'admission':
+        return (f"🏛️ *Admission Helpline*\n\n"
+                "Naye admission ke liye niche diye number par call karein ya office aayein:\n"
+                f"{ADMISSION_CONTACT}\n"
+                "📍 *Address:* Prince Classes, Main Road, Adajan, Surat.")
 
-        # 3. Test Plan (Exam)
-        elif any(word in msg for word in ['test', 'exam', 'plan', 'syllabus', 'date']):
-            return TEST_PLAN
-
-        # 4. Fees
-        elif any(word in msg for word in ['fee', 'money', 'paise', 'cost', 'payment']):
-            return FEES_INFO
-
-        # 5. Notes/PDF
-        elif any(word in msg for word in ['note', 'pdf', 'book', 'material', 'drive']):
-            return NOTES_LINK
-
-        # 6. Location
-        elif any(word in msg for word in ['address', 'kaha', 'location', 'jagah', 'map', 'shop']):
-            return ADDRESS
-
-        # 7. Default Reply (Jab kuch samajh na aaye)
+    elif detected_class:
+        if topic == 'time':
+            link = get_image_link(f"Class+{detected_class}+Time+Table")
+            return f"📅 *Class {detected_class} Time Table:*\nDownload Link: {link}"
+        elif topic == 'exam':
+            link = get_image_link(f"Class+{detected_class}+Exam+Schedule")
+            return f"📝 *Class {detected_class} Exam Dates:*\nCheck here: {link}"
         else:
-            return (f"🤖 Maaf kijiye, mujhe iska jawab nahi pata.\n\n"
-                    "Please sahi option likhein (Time / Notes / Fee).\n"
-                    "Ya Sir ko call karein: 📞 9876543210")
+            return (f"📂 *Class {detected_class} Information*\n\n"
+                    f"Aap kya dekhna chahte hain?\n"
+                    f"👉 *Time {detected_class}* (Schedule ke liye)\n"
+                    f"👉 *Exam {detected_class}* (Exam plan ke liye)")
 
-    except Exception as e:
-        return "⚠️ Server Error. Please try again."
+    # 4. Fallback (Jab kuch samajh na aaye)
+    else:
+        return ("⚠️ *Maaf karein, mujhe samajh nahi aaya.*\n\n"
+                "Kripya niche diye gaye tareeke se reply karein:\n"
+                "✅ *Hi* (Menu dekhne ke liye)\n"
+                "✅ *Time 10* (Schedule ke liye)\n"
+                "✅ *Admission* (Naye admission ke liye)")
 
 if __name__ == '__main__':
-    # Render Port Fix
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
