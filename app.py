@@ -3,75 +3,78 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# --- 🏫 ACADEMY DETAILS ---
-INSTITUTE_NAME = "🌟 *PRINCE ACADEMY* 🌟"
-CONTACT = "+91 98765-43210"
-TIMING = "🕘 8 AM - 🕗 8 PM"
+# --- 🏫 ACADEMY INFO ---
+NAME = "🌟 *PRINCE ACADEMY* 🌟"
+LINE = "---------------------------"
 UPI = "prince@upi"
-FORM = "https://forms.gle/DemoForm"
+CONTACT = "9876543210"
 
-def get_img(text):
-    return f"https://placehold.co/600x800/png?text={text.replace(' ', '+')}&font=roboto"
+def get_img(topic):
+    # Attractive placeholder image logic
+    return f"https://placehold.co/600x800/png?text={topic.replace(' ', '+')}&font=roboto"
 
 @app.route('/')
-def home(): return "Prince Academy Bot is Active!"
+def home(): return "Bot is Active!"
 
 @app.route('/whatsapp', methods=['GET', 'POST'])
 def whatsapp_reply():
     msg = request.args.get('msg', '').lower().strip()
     
-    # 1. Welcome Menu (Line by Line)
-    if msg in ['hi', 'hello', 'hey', 'start', 'menu']:
-        return (f"{INSTITUTE_NAME}\n"
-                "---------------------------\n"
-                "Kripya niche se chunein:\n\n"
+    # 1️⃣ MAIN MENU (Simple & Line-by-line)
+    if msg in ['hi','hii', 'hello', 'hey', 'start', 'menu']:
+        return (f"{NAME}\n{LINE}\n"
+                "Aapko kis class ki info chahiye?\n\n"
                 "6️⃣ - Class 6 info\n"
                 "7️⃣ - Class 7 info\n"
                 "8️⃣ - Class 8 info\n"
                 "9️⃣ - Class 9 info\n"
                 "🔟 - Class 10 info\n"
                 "1️⃣1️⃣ - Class 11 info\n"
-                "1️⃣2️⃣ - Class 12 info\n"
-                "❓ - Query (Fees, Admission, Timing)\n\n"
-                "👉 *Sirf number bhejye (Ex: 10)*")
+                "1️⃣2️⃣ - Class 12 info\n\n"
+                "❓ - *Query* (Fees/Admission)\n\n"
+                "👉 *jankari ke liye Sirf Number bhejein (Ex: 10,11,12...)*")
 
-    # 2. Query Section (Admission + Payment + Timing)
-    if 'query' in msg or 'help' in msg or '?' in msg:
-        return (f"❓ *HELP & ADMISSION*\n"
-                f"---------------------------\n"
-                f"⏰ *Timing:* {TIMING}\n"
-                f"📝 *Admission Form:* {FORM}\n"
-                f"💳 *Fees Payment:* `{UPI}`\n"
+    # 2️⃣ QUERY SECTION (All in one place)
+    if msg == 'query','quary','jankari','info'' or msg == 'help':
+        return (f"❓ *HELP & ADMISSION*\n{LINE}\n"
+                f"⏰ *Timing:* 8 AM - 8 PM\n"
+                f"📝 *Admission:* Link niche hai\n"
+                f"💳 *Payment UPI:* `{UPI}`\n"
                 f"📞 *Call:* {CONTACT}\n\n"
-                f"Main menu ke liye *Hi* likhein.")
+                "Main menu ke liye *Hi,hello,start,menu* likhein.")
 
-    # 3. Handle Class Number (6, 7, 8...)
+    # 3️⃣ CLASS SUB-MENU (Direct & Same Format)
     classes = ['6', '7', '8', '9', '10', '11', '12']
     if msg in classes:
-        return (f"📂 *CLASS {msg} MENU*\n"
-                "---------------------------\n"
-                f"Kya dekhna hai? Type karein:\n\n"
+        return (f"📂 *CLASS {msg} MENU*\n{LINE}\n"
+                "Kya dekhna chahte hain? Type karein:\n\n"
                 f"👉 *Time {msg}* (Time Table)\n"
                 f"👉 *Exam {msg}* (Exam Date)\n"
                 f"👉 *Fees {msg}* (Fees Detail)")
 
-    # 4. Handle Specific Topics (Time 10, Exam 10, Fees 10)
-    detected_class = None
-    for c in classes:
-        if c in msg:
-            detected_class = c
-            break
-            
-    if detected_class:
+    # 4️⃣ FINAL DATA (Time, Exam, Fees)
+    # Check if message contains both class and topic
+    found_class = next((c for c in classes if c in msg), None)
+    
+    if found_class:
         if 'time' in msg:
-            return f"🕒 *Class {detected_class} Time Table:*\nDownload: {get_img(f'Class {detected_class} Time Table')}"
+            return (f"🕒 *CLASS {found_class} TIME TABLE*\n{LINE}\n"
+                    "Ye raha aapka schedule:\n"
+                    f"📥 {get_img(f'Class {found_class} Time Table')}")
+        
         elif 'exam' in msg:
-            return f"📝 *Class {detected_class} Exam Plan:*\nDownload: {get_img(f'Class {detected_class} Exam Plan')}"
+            return (f"📝 *CLASS {found_class} EXAM PLAN*\n{LINE}\n"
+                    "Exam ki taiyari shuru karein:\n"
+                    f"📥 {get_img(f'Class {found_class} Exam Plan')}")
+            
         elif 'fees' in msg or 'payment' in msg:
-            return f"💳 *Class {detected_class} Fees:* ₹2000/month\nPay to: {UPI}"
+            return (f"💳 *CLASS {found_class} FEES*\n{LINE}\n"
+                    "Fees: ₹2000/Month\n"
+                    f"Pay to UPI: `{UPI}`\n"
+                    "Screenshot isi number par bhejein.")
 
-    # 5. Simple Fallback
-    return "⚠️ *Samajh nahi aaya.*\n\nMain menu ke liye *Hi* likhein."
+    # 5️⃣ FALLBACK (Simple Error)
+    return "⚠️ *Samajh nahi aaya.*\n\nMain menu ke liye *Hi,helo,menu,start* likhein."
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
