@@ -63,10 +63,10 @@ def whatsapp_reply():
     msg_lower = msg.lower()
     
     # 1. SPELLING MISTAKE LISTS (Typos handle karne ke liye)
-    # Agar baccha inme se kuch bhi likhega, bot samajh jayega
     greet_words = ['hi', 'hello', 'hey', 'helo', 'hy', 'hii', 'namaste', 'menu', 'start', 'shuru']
     
-    class_words = ['class', 'classes', 'clas', 'clss', 'cls', 'kaksha', 'std', 'standard', 'batch','6','7','8','9'.'10','11','12', 'padhai']
+    # Is list mein maine vo dot (.) wali galti thik kar di hai
+    class_words = ['class', 'classes', 'clas', 'clss', 'cls', 'kaksha', 'std', 'standard', 'batch', '6', '7', '8', '9', '10', '11', '12', 'padhai']
     
     pay_words   = ['payment', 'pay', 'fee', 'fees', 'fess', 'feee', 'paisa', 'money', 'bank', 'qr', 'upi']
     
@@ -106,7 +106,7 @@ Link par click karein 👇
 🔗 {final_link}
 
 ━━━━━━━━━━━━━━━━━━
-🔙 *Menu ke liye 'Hi,hello ,hii,menu,start' likhein*"""
+🔙 *Menu ke liye 'Hi,hello,hii,menu,start' likhein*"""
 
     # 3. MAIN MENU (Jab baccha 'Hi', 'Hii', 'Helo' kare)
     elif any(word in msg_lower for word in greet_words):
