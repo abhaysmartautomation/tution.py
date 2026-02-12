@@ -4,7 +4,7 @@ import re
 app = Flask(__name__)
 
 # ---------------------------------------------------------
-# 👇 ADMIN SETTINGS (Sirf yahan badlav karein)
+# 👇 ADMIN SETTINGS
 # ---------------------------------------------------------
 
 PHONE_NO = "9898308806"
@@ -49,20 +49,14 @@ def whatsapp_reply():
                 current_notices[target] = new_notice
                 return f"✅ *Success!* Notice updated for {target.upper()}"
         except:
-            return "❌ Error in format. Use: *set notice 10 My Message*"
+            return "❌ Error! Format: *set notice 10 My Message*"
 
-    # --- 🤖 SMART KEYWORDS (Related Options) ---
+    # --- 🤖 SMART KEYWORDS ---
     greet_words = ['hi', 'hello', 'hey', 'namaste', 'menu', 'start', 'hii', 'helo', 'hy', 'shuru']
     pay_words   = ['payment', 'pay', 'fee', 'fees', 'fess', 'paisa', 'money', 'qr', 'upi', 'bank']
-    
-    # Ye saare words bache ko class dashboard par le jayenge
-    info_words  = [
-        'timetable', 'time table', 'timetabl', 'time-table', 'schedule', 'shedule', 'routine', 
-        'exam', 'test', 'paper', 'datesheet', 'date sheet', 'exam date', 'exam schedule', 
-        'class time', 'timing', 'lecture', 'period'
-    ]
+    info_words  = ['timetable', 'time table', 'schedule', 'routine', 'exam', 'test', 'paper', 'datesheet', 'timing']
 
-    # Smart Class Number Finder (Regex)
+    # Smart Class Number Finder
     numbers_found = re.findall(r'\d+', msg_lower)
     valid_class = None
     if numbers_found:
@@ -71,8 +65,7 @@ def whatsapp_reply():
                 valid_class = num
                 break
 
-    # 🟢 1. AGAR NUMBER MILE YA RELATED OPTION MILE (Class Identification)
-    # Agar bacha '10' likhe ya 'Class 10' ya 'timetable 10'
+    # 🟢 1. CLASS DASHBOARD
     if valid_class:
         class_num = valid_class
         t_link = TIMETABLE_LINKS.get(class_num)
@@ -85,8 +78,6 @@ def whatsapp_reply():
 
         return f"""{notice_box}🎓 *CLASS {class_num} DASHBOARD* 🎓
 ━━━━━━━━━━━━━━━━━━━
-Aapki class ka schedule aur exam niche diye gaye hain:
-
 📅 *WEEKLY TIME TABLE*
 👇 Click to View
 🔗 {t_link}
@@ -97,16 +88,16 @@ Aapki class ka schedule aur exam niche diye gaye hain:
 
 ⏰ *TIMING DETAILS*
 ━━━━━━━━━━━━━━━━━━━
-📍 *Tution Time:* 04:00 PM to 07:00 PM
-✍️ *Exam Time:* *12:30 PM to 03:30 PM* ⚡
+📍 *Tution:* 04:00 PM - 07:00 PM
+✍️ *Exam:* *12:30 PM - 03:30 PM* ⚡
 ━━━━━━━━━━━━━━━━━━━
 🔙 *Menu ke liye 'Hi' likhein*"""
 
-    # 🟡 2. AGAR SIRF TIMETABLE/EXAM LIKHE BINA NUMBER KE
+    # 🟡 2. INFO WORDS BINA NUMBER KE
     elif any(word in msg_lower for word in info_words):
-        return "❓ *Kaunsi class ka?*\n\nKripya apni class ka number likhein taaki main aapko sahi Time Table aur Exam Schedule de sakun.\n\n👉 *Jaise: 10 ya 12*"
+        return "❓ *Kaunsi class ka?*\n\nApni class ka number likhein taaki main aapko sahi detail de sakun.\n\n👉 *Example: 10*"
 
-    # 🟠 3. MAIN MENU
+    # 🟠 3. MAIN MENU (List Format)
     elif any(word in msg_lower for word in greet_words):
         global_msg = current_notices.get('all', "Sab normal")
         global_box = ""
@@ -117,15 +108,19 @@ Aapki class ka schedule aur exam niche diye gaye hain:
 ━━━━━━━━━━━━━━━━━━━
 👋 *Namaste!*
 
-Apni class ka number likhein:
-*(Time Table, Exam aur Notice ke liye)*
+Apni Class ka number likhein:
 
-6️⃣ se 1️⃣2️⃣ tak koi bhi number likhein.
+6️⃣  *Class 6*
+7️⃣  *Class 7*
+8️⃣  *Class 8*
+9️⃣  *Class 9*
+🔟  *Class 10*
+1️⃣1️⃣ *Class 11*
+1️⃣2️⃣ *Class 12*
 
-👇 *Example:*
+👇 *Jaise aise likhein:*
 👉 *10*
 👉 *Fees*
-👉 *Exam*
 ━━━━━━━━━━━━━━━━━━━"""
 
     # 🔵 4. PAYMENT
@@ -135,6 +130,9 @@ Apni class ka number likhein:
     elif 'wake' in msg_lower:
         return "I am awake!"
 
-    # ⚪ 5. DEFAULT (Agar kuch bhi samajh na aaye)
+    # ⚪ 5. DEFAULT
     else:
-        return "
+        return "🤖 *Samajh nahi aaya!*\n\nKripya apni *Class ka number* (6-12) likhein ya *'Hi'* likhkar menu dekhein."
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
