@@ -66,7 +66,7 @@ def whatsapp_reply():
     # Agar baccha inme se kuch bhi likhega, bot samajh jayega
     greet_words = ['hi', 'hello', 'hey', 'helo', 'hy', 'hii', 'namaste', 'menu', 'start', 'shuru']
     
-    class_words = ['class', 'classes', 'clas', 'clss', 'cls', 'kaksha', 'std', 'standard', 'batch',,'6','7','8','9'.'10','11','12', 'padhai']
+    class_words = ['class', 'classes', 'clas', 'clss', 'cls', 'kaksha', 'std', 'standard', 'batch','6','7','8','9'.'10','11','12', 'padhai']
     
     pay_words   = ['payment', 'pay', 'fee', 'fees', 'fess', 'feee', 'paisa', 'money', 'bank', 'qr', 'upi']
     
