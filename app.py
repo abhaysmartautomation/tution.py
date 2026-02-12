@@ -3,89 +3,55 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# --- 🏫 ACADEMY CONFIGURATION ---
+# --- CONFIGURATION ---
 NAME = "🌟 *PRINCE ACADEMY* 🌟"
 LINE = "---------------------------"
-UPI_ID = "prince@upi" # Apni UPI ID badal dein
-PHONE = "+91 98765-43210" # Apna Number badal dein
-FORM = "https://forms.gle/XYZ123DemoForm"
-
-def get_img(txt):
-    return f"https://placehold.co/600x800/png?text={txt.replace(' ', '+')}&font=roboto"
 
 @app.route('/')
-def home():
-    return "Bot is Online & Robust!"
+def home(): return "Prince Academy Bot is Live!"
 
 @app.route('/whatsapp', methods=['GET', 'POST'])
 def whatsapp_reply():
+    # Message clean up
     msg = request.args.get('msg', '').lower().strip()
     
-    # 🛑 Filter for system errors
-    if not msg or "{not_text}" in msg or "[not_text]" in msg:
-        return ""
-
-    # 1️⃣ START / MENU / HI
-    greetings = ['hi', 'hello', 'hey', 'start', 'menu', 'namaste', 'hlw']
-    if any(word == msg for word in greetings):
+    # 1. Main Menu (Simple List)
+    if msg in ['hi', 'hello', 'start', 'namaste', 'hlw']:
         return (f"{NAME}\n{LINE}\n"
-                "Aapko kis class ki jankari chahiye?\n\n"
-                "6️⃣ - Class 6 info\n"
-                "7️⃣ - Class 7 info\n"
-                "8️⃣ - Class 8 info\n"
-                "9️⃣ - Class 9 info\n"
-                "🔟 - Class 10 info\n"
-                "1️⃣1️⃣ - Class 11 info\n"
+                "Namaste! Niche se option chunein:\n\n"
+                "6️⃣ - Class 6 info\n7️⃣ - Class 7 info\n8️⃣ - Class 8 info\n"
+                "9️⃣ - Class 9 info\n🔟 - Class 10 info\n1️⃣1️⃣ - Class 11 info\n"
                 "1️⃣2️⃣ - Class 12 info\n\n"
-                "❓ - *Query* (Fees, Admission, Timing)\n\n"
+                "❓ - *Query* (Admission/Payment/Timing)\n\n"
                 "👉 *Sirf number likh kar bhejein*")
 
-    # 2️⃣ SMART QUERY SECTION (Admission, Payment, Fees)
-    help_words = ['query', 'help', 'admission', 'payment', 'fees', 'timing', 'pay', 'address']
-    if any(word in msg for word in help_words):
-        # Specific sub-replies for Payment/Admission
-        if 'pay' in msg or 'fees' in msg:
-            return (f"💳 *FEES & PAYMENT*\n{LINE}\n"
-                    f"🆔 *UPI ID:* `{UPI_ID}`\n"
-                    f"💰 *GPay/PhonePe:* {PHONE}\n"
-                    "⚠️ *Note:* Payment ke baad screenshot isi number par bhej dein.")
-        
-        if 'admission' in msg:
-            return (f"📝 *NEW ADMISSION*\n{LINE}\n"
-                    f"🔗 *Form Link:* {FORM}\n"
-                    "Kripya form bharein, hum aapse sampark karenge.")
+    # 2. Query/Admission/Payment (All in one)
+    if 'query' in msg or 'admission' in msg or 'payment' in msg:
+        return (f"❓ *HELP & ADMISSION*\n{LINE}\n"
+                f"⏰ *Timing:* 8 AM - 8 PM\n"
+                f"📝 *Admission Form:* bit.ly/DemoForm\n"
+                f"💳 *UPI ID:* `prince@upi`\n"
+                f"📞 *Contact:* 9876543210\n\n"
+                "Main menu ke liye *Hi* likhein.")
 
-        return (f"❓ *HELP DESK*\n{LINE}\n"
-                f"⏰ *Timing:* 8 AM to 8 PM\n"
-                f"📍 *Address:* City Center, Main Road.\n"
-                f"📞 *Contact:* {PHONE}\n\n"
-                "Menu ke liye *Hi* likhein.")
-
-    # 3️⃣ SMART CLASS DETECTION (6-12)
+    # 3. Class Logic (Simple)
     classes = ['6', '7', '8', '9', '10', '11', '12']
+    if msg in classes:
+        return (f"📂 *CLASS {msg} INFO*\n{LINE}\n"
+                "Type karein:\n"
+                f"👉 *Time {msg}*\n"
+                f"👉 *Exam {msg}*")
+
+    # 4. Detailed Data
     detected = next((c for c in classes if c in msg), None)
-
     if detected:
-        # Check for specific topics
-        if 'time' in msg or 'table' in msg:
-            return f"🕒 *CLASS {detected} TIME TABLE*\n{LINE}\n📥 {get_img(f'Class {detected} Time Table')}"
-        
-        elif 'exam' in msg or 'date' in msg or 'test' in msg:
-            return f"📝 *CLASS {detected} EXAM PLAN*\n{LINE}\n📥 {get_img(f'Class {detected} Exam Schedule')}"
-        
-        else:
-            # Show sub-menu for the specific class
-            return (f"📂 *CLASS {detected} MENU*\n{LINE}\n"
-                    "Aapko kya chahiye? Type karein:\n\n"
-                    f"👉 *Time {detected}*\n"
-                    f"👉 *Exam {detected}*\n"
-                    f"👉 *Fees {detected}*")
+        if 'time' in msg:
+            return f"🕒 *CLASS {detected} TIME TABLE*\n{LINE}\nCheck here: https://placehold.co/600x800/png?text=Class+{detected}+Time+Table"
+        elif 'exam' in msg:
+            return f"📝 *CLASS {detected} EXAM PLAN*\n{LINE}\nCheck here: https://placehold.co/600x800/png?text=Class+{detected}+Exam"
 
-    # 4️⃣ FALLBACK (If nothing matches)
-    return ("⚠️ *Samajh nahi aaya!*\n\n"
-            "Kripya sahi number (6-12) likhein ya *Hi* bhej kar menu dekhein.")
+    # Fallback
+    return "⚠️ *Maaf karein, samajh nahi aaya.*\n\nMain menu ke liye *Hi* likhein."
 
 if __name__ == '__main__':
-    # Fixed Port Binding for Render
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
