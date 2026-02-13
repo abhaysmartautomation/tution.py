@@ -4,20 +4,20 @@ import re
 app = Flask(__name__)
 
 # =========================================================
-# ⚙️ ADMIN SETTINGS
+# ⚙️ ADMIN & LINK SETTINGS
 # =========================================================
+
+# 👇 AAPKA FORM LINK (Yahan Paste Karein)
+FORM_LINK = "https://forms.gle/GWipzdU8hbPxZF6dA"
+
 PHONE_NO  = "9898308806"
 WA_LINK   = f"https://wa.me/91{PHONE_NO}" 
-YT_LINK   = "https://youtube.com/c/PrinceAcademy"
-FORM_LINK = "https://bit.ly/Prince-Admission-Form"
 MAP_LINK  = "http://maps.google.com/?q=Prince+Academy+Surat"
 
-# 📊 SMART RESULT DATA (Ab Subject-wise aur Percentage ke sath)
+# 📊 RESULT DATA (Smart Subject Wise)
 STUDENT_RESULTS = {
     '101': '*Rahul Kumar (Class 10)*\n📐 Maths: 95\n🔬 Science: 90\n📖 English: 85\n📊 *Percentage: 90%*',
-    
     '102': '*Sneha Gupta (Commerce)*\n💰 Accounts: 82\n📈 Economics: 88\n📝 B.St: 85\n📊 *Percentage: 85%*',
-    
     '103': '*Amit Sharma (Science)*\n⚛️ Physics: 72\n🧪 Chemistry: 68\n📐 Maths: 76\n📊 *Percentage: 72%*'
 }
 
@@ -25,7 +25,7 @@ STUDENT_RESULTS = {
 TIMETABLE_LINKS = {str(i): f"https://bit.ly/Prince-Class{i}" for i in range(6, 13)}
 EXAM_LINKS      = {str(i): f"https://bit.ly/Exam-Class{i}" for i in range(6, 13)}
 
-# 📢 NOTICES
+# 📢 NOTICE BOARD (Memory)
 current_notices = {str(i): "Sab normal" for i in range(6, 13)}
 current_notices['all'] = "Sab normal"
 
@@ -41,22 +41,92 @@ def whatsapp_reply():
     msg = msg.strip()
     msg_lower = msg.lower()
 
-    # --- FUZZY KEYWORDS (Spelling mistake proof) ---
-    query_pattern = r"(query|qery|queri|admi|addmi|help|sahayta|form|fees|pay|locat|paisa)"
-    result_pattern = r"(result|reslt|rsult|marks|score|nambar|number)"
-    greet_pattern = r"^(hi|hello|helo|hii|hey|menu|start|namaste|hy)$"
+    # --- 0. ADMIN COMMAND (Sir ke liye) ---
+    # Format: set notice all Kal Chutti Hai
+    if msg_lower.startswith("set notice"):
+        try:
+            parts = msg.split(" ", 3)
+            target = parts[2].lower() # 'all' ya '10'
+            note_text = parts[3]
+            if target in current_notices or target == 'all':
+                current_notices[target] = note_text
+                return f"✅ Notice Set Successfully for {target.upper()}!"
+        except: return "❌ Error! Format: set notice all [Message]"
 
-    # --- NUMBER FINDER ---
+    # --- 1. SPELLING MISTAKE PATTERNS (Fuzzy Logic) ---
+    # Ye galat spelling ko bhi pakad lega
+    query_pattern  = r"(query|qery|queri|admi|addmi|help|sahayta|form|fees|pay|locat|paisa|contact)"
+    result_pattern = r"(result|reslt|rsult|marks|score|nambar|number|mark)"
+    leave_pattern  = r"(leave|chutti|absent|nahi aaunga|bimar|sick|application|leav|chuti|bukhar)"
+    greet_pattern  = r"^(hi|hello|helo|hii|hey|menu|start|namaste|hy|hlo)$"
+
+    # --- 2. NUMBER FINDER ---
     found_numbers = re.findall(r'\d+', msg_lower)
     valid_class = next((n for n in found_numbers if n in TIMETABLE_LINKS), None)
 
-    # 🟢 1. CLASS DASHBOARD
-    if valid_class:
+    # =====================================================
+    # 👇 RESPONSE LOGIC
+    # =====================================================
+
+    # 🤒 BRANCH 1: LEAVE APPLICATION
+    if re.search(leave_pattern, msg_lower):
+        return f"""🤒 *LEAVE APPLICATION*
+━━━━━━━━━━━━━━━━━━━
+Aap aaj class nahi aa rahe👍? 
+
+Niche diye gaye link par form bharein. Sir ke paas turant update pahunch jayega.
+
+👉 *CLICK TO FILL:*
+🔗 {FORM_LINK}
+
+*Note:* Jhoot bolne par Sir call karenge! 📞
+━━━━━━━━━━━━━━━━━━━
+🏠 *Menu ke liye 'Hi' likhein*"""
+
+    # 📊 BRANCH 2: RESULT CHECKER
+    elif re.search(result_pattern, msg_lower):
+        if found_numbers and found_numbers[0] in STUDENT_RESULTS:
+            roll = found_numbers[0]
+            return f"""📊 *EXAM RESULT DECLARATION*
+━━━━━━━━━━━━━━━━━━━
+🆔 *Roll No:* {roll}
+👤 *Student Detail:*
+{STUDENT_RESULTS[roll]}
+━━━━━━━━━━━━━━━━━━━
+🏆 *Keep it up!*
+🏠 *Menu ke liye 'Hi' likhein*"""
+        else:
+            return "❌ *Result nahi mila!* \nSahi Roll No likhein. \n👉 Example: *Result 101*"
+
+    # 🏛️ BRANCH 3: HELP & ADMISSION
+    elif re.search(query_pattern, msg_lower):
+        return f"""🏛️ *HELP & ADMISSION DESK* 🏛️
+━━━━━━━━━━━━━━━━━━━
+📝 *NEW ADMISSION FORM*
+🔗 https://bit.ly/Prince-Admission-Form
+
+💳 *FEES PAYMENT (UPI)*
+🔗 {PHONE_NO}@upi
+
+📞 *CONTACT SIR*
+🔗 {WA_LINK}
+
+📍 *LOCATION*
+🔗 {MAP_LINK}
+━━━━━━━━━━━━━━━━━━━
+🏠 *Menu ke liye 'Hi' likhein*"""
+
+    # 🎓 BRANCH 4: CLASS DASHBOARD (With RED NOTICE)
+    elif valid_class:
         cls = valid_class
         notice = current_notices.get(cls, "Sab normal")
-        n_box = f"╔══════════════════╗\n📢  *CLASS {cls} NOTICE*\n\n  {notice}\n╚══════════════════╝\n" if "Sab normal" not in notice else ""
+        
+        # 🚨 Notice Box Logic (Agar notice hai to Red Box dikhega)
+        notice_box = ""
+        if "Sab normal" not in notice:
+            notice_box = f"🚨🔴 *URGENT NOTICE* 🔴🚨\n╔══════════════════╗\n  👉 {notice.upper()}\n╚══════════════════╝\n"
 
-        return f"""{n_box}🎓 *CLASS {cls} DASHBOARD* 🎓
+        return f"""{notice_box}🎓 *CLASS {cls} DASHBOARD* 🎓
 ━━━━━━━━━━━━━━━━━━━
 📅 *WEEKLY TIME TABLE*
 👇 Click to View
@@ -73,43 +143,14 @@ def whatsapp_reply():
 ━━━━━━━━━━━━━━━━━━━
 🔙 *Menu ke liye 'Hi' likhein*"""
 
-    # 🟣 2. HELP & ADMISSION (Full Details)
-    elif re.search(query_pattern, msg_lower):
-        return f"""🏛️ *HELP & ADMISSION DESK* 🏛️
-━━━━━━━━━━━━━━━━━━━
-📝 *NEW ADMISSION FORM*
-🔗 {FORM_LINK}
-
-💳 *FEES PAYMENT (UPI)*
-🔗 {PHONE_NO}@upi
-
-📞 *CONTACT SIR*
-🔗 {WA_LINK}
-
-📍 *LOCATION*
-🔗 {MAP_LINK}
-━━━━━━━━━━━━━━━━━━━
-🏠 *Menu ke liye 'Hi' likhein*"""
-
-    # 🆕 3. SMART RESULT CHECKER (Fixed & Detailed)
-    elif re.search(result_pattern, msg_lower):
-        roll = found_numbers[0] if found_numbers else None
-        if roll in STUDENT_RESULTS:
-            return f"""📊 *EXAM RESULT DECLARATION*
-━━━━━━━━━━━━━━━━━━━
-🆔 *Roll No:* {roll}
-👤 *Student Detail:*
-{STUDENT_RESULTS[roll]}
-━━━━━━━━━━━━━━━━━━━
-🏆 *Keep it up!*
-🏠 *Menu ke liye 'Hi' likhein*"""
-        else:
-            return "❌ *Result nahi mila!* \nApna Roll No likhein. \n👉 Example: *Result 101*"
-
-    # 🟠 4. MAIN MENU (Vertical List with Yellow Dots)
+    # 👋 BRANCH 5: MAIN MENU (With RED NOTICE)
     elif re.search(greet_pattern, msg_lower):
+        
+        # 🚨 Global Notice Box Logic
         g_msg = current_notices.get('all', "Sab normal")
-        g_box = f"╔══════════════════╗\n🚨  *URGENT NOTICE* 🚨\n\n  {g_msg}\n╚══════════════════╝\n" if "Sab normal" not in g_msg else ""
+        g_box = ""
+        if "Sab normal" not in g_msg:
+             g_box = f"🚨🔴 *URGENT NOTICE* 🔴🚨\n╔══════════════════╗\n  👉 {g_msg.upper()}\n╚══════════════════╝\n"
 
         return f"""{g_box}🏛️ *PRINCE ACADEMY* 🏛️
 ━━━━━━━━━━━━━━━━━━━
@@ -124,15 +165,14 @@ def whatsapp_reply():
 🔟  *Class 10*
 1️⃣1️⃣ *Class 11*
 1️⃣2️⃣ *Class 12*
-
 🟡 *Query / Admission*
 🟡 *Check Result*
-
+🟡 *Leave Application*
 ━━━━━━━━━━━━━━━━━━━"""
 
-    # 🔵 5. DEFAULT
+    # 🤖 BRANCH 6: DEFAULT
     else:
-        return "🤖 *Samajh nahi aaya!*\n\nClass Number (6-12) likhein ya *Query* likhein."
+        return "🤖 *Samajh nahi aaya!*\n\nClass Number (6-12) likhein, *Result* likhein ya *Query* likhein."
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
