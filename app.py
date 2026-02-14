@@ -1,18 +1,7 @@
 from flask import Flask, request
 import re
-import google.generativeai as genai
 
 app = Flask(__name__)
-
-# =========================================================
-# ⚙️ AI CONFIGURATION
-# =========================================================
-API_KEY = "YOUR_GEMINI_API_KEY_HERE" 
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    system_instruction="You are Abhay Bot for Abhay Tuition. Reply in short Hinglish."
-)
 
 # =========================================================
 # ⚙️ ADMIN SETTINGS
@@ -56,11 +45,10 @@ def whatsapp_reply():
                 current_notices[target] = parts[3]
                 return f"✅ Notice Updated for {target.upper()}!"
 
-        # 🧠 SMART PATTERNS (Relatable Words & Typos Added)
-        leave_pattern  = r"(leave|chutti|chuti|chuty|absent|absnt|bimar|sick|aplication|aply|leav|bukhar|chhuti|application)"
-        result_pattern = r"(result|reslt|rsult|marks|score|nambar|number|mark|roll|rol|marks|percent|percentage)"
-        query_pattern  = r"(query|help|quary|addmi|fees|pay|locat|paisa|contact|address|adrss|form|detal|info|doubt|admission|location|map|paisa)"
-        greet_pattern  = r"^(hi|hello|hii|hey|namaste|menu|start|helo|hy|yo)$"
+        # 🧠 SMART PATTERNS
+        leave_pattern  = r"(leave|chutti|chuti|chuty|absent|absnt|bimar|sick|aplication|aply|absents|bukhar|chhuti|application)"
+        result_pattern = r"(result|reslt|rsult|marks|score|nambar|number|mark|roll|rol|no|resut)"
+        query_pattern  = r"(query|help|admi|addmi|fees|payment|locat|paisa|contact|address|doubt|form|detal|info|solve|admission)"
         
         found_numbers = re.findall(r'\d+', msg_lower)
         valid_class = next((n for n in found_numbers if n in TIMETABLE_LINKS), None)
@@ -147,36 +135,16 @@ Result dekhne ke liye Roll No likhein.
 
 ⏰ *TIMING:* 04:00 PM - 07:00 PM
 ━━━━━━━━━━━━━━━━━
-🏠 *Menu ke liye 'Hi' likhein>>Ya sahi opt chune<<😉*"""
+🏠 *Menu ke liye 'Hi' likhein*"""
 
-        # --- 5. GREETINGS (Menu) ---
-        elif re.search(greet_pattern, msg_lower):
-            return main_menu(current_notices.get('all', "Sab normal"))
-
-        # --- 6. AI & UNKNOWN WORD FILTER ---
+        # --- 5. GREETINGS & UNKNOWN (THE SORRY LOGIC) ---
         else:
-            # Check for random gibberish (e.g., "akjsax,k")
-            # Agar word me vowels na ho ya wo bahut ajeeb ho to Sorry message
-            if len(msg_lower) > 3 and not any(v in msg_lower for v in 'aeiou') or len(msg_lower) > 15 and " " not in msg_lower:
-                return f"""❌ *SORRY!*
-━━━━━━━━━━━━━━━━━━━
-Mujhe ye samajh nahi aaya. 
-
-Please send *Menu*, *Start*, *Hi*, or *Hii* likhein menu ke liye.
-━━━━━━━━━━━━━━━━━━━"""
-            
-            try:
-                # AI Response for Study Doubts
-                response = model.generate_content(raw_msg)
-                ai_reply = response.text.replace("**", "").replace("*", "").strip()
-                return f"🤖 *AI Answer:*\n{ai_reply}\n\n🏠 *Menu ke liye 'Hi' likhein*"
-            except:
-                return f"""❌ *SORRY!*
-━━━━━━━━━━━━━━━━━━━
-Mujhe ye samajh nahi aaya🧐. 
-
-Please send *Menu*, *Start*, *Hi*, likhein menu ke liye.
-━━━━━━━━━━━━━━━━━━━"""
+            if msg_lower in ['hi', 'hello', 'hii', 'hey', 'namaste', 'menu', 'start', 'helo']:
+                return main_menu(current_notices.get('all', "Sab normal"))
+            else:
+                # Jab kuch samajh na aaye (Example: aksjdfh)
+                sorry_text = "❌ *SORRY!*\n━━━━━━━━━━━━━━━━━━━\nMujhe ye samajh nahi aaya. 😅\n\nPlease niche diye gaye options chuniye ya *Hi* likhein."
+                return f"{sorry_text}\n\n{main_menu(current_notices.get('all', 'Sab normal'))}"
 
     except Exception:
         return main_menu(current_notices.get('all', "Sab normal"))
@@ -200,10 +168,9 @@ def main_menu(g_msg):
 1️⃣1️⃣ *Class 11*
 1️⃣2️⃣ *Class 12*
 
-🟡 *QUERY*:- FOR DOUBT✨
-🟡 *RESULT*:-FOR RESULT✨
-🟡 *Application*:FOR LEAVE REPORT✨
-
+🔷*QUERY*:- FOR DOUBT✨
+🔷*RESULT*:-FOR RESULT✨
+🔷*Application*-FOR LEAVE REPORT✨
 ━━━━━━━━━━━━━━━━━━"""
 
 if __name__ == '__main__':
