@@ -1,7 +1,18 @@
 from flask import Flask, request
 import re
+import google.generativeai as genai
 
 app = Flask(__name__)
+
+# =========================================================
+# ⚙️ AI CONFIGURATION
+# =========================================================
+API_KEY = "YOUR_GEMINI_API_KEY_HERE" 
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    system_instruction="You are Abhay Bot for Abhay Tuition. Reply in short Hinglish."
+)
 
 # =========================================================
 # ⚙️ ADMIN SETTINGS
@@ -45,10 +56,11 @@ def whatsapp_reply():
                 current_notices[target] = parts[3]
                 return f"✅ Notice Updated for {target.upper()}!"
 
-        # 🧠 PATTERNS
-        leave_pattern  = r"(leave|chutti|chuti|chuty|absent|absnt|bimar|sick|aplication|aply|leav|bukhar|chhuti)"
-        result_pattern = r"(result|reslt|rsult|marks|score|nambar|number|mark|roll|rol|no|resut)"
-        query_pattern  = r"(query|help|admi|addmi|fees|pay|locat|paisa|contact|address|adrss|form|detal|info|pese|admission)"
+        # 🧠 SMART PATTERNS (Relatable Words & Typos Added)
+        leave_pattern  = r"(leave|chutti|chuti|chuty|absent|absnt|bimar|sick|aplication|aply|leav|bukhar|chhuti|application)"
+        result_pattern = r"(result|reslt|rsult|marks|score|nambar|number|mark|roll|rol|marks|percent|percentage)"
+        query_pattern  = r"(query|help|quary|addmi|fees|pay|locat|paisa|contact|address|adrss|form|detal|info|doubt|admission|location|map|paisa)"
+        greet_pattern  = r"^(hi|hello|hii|hey|namaste|menu|start|helo|hy|yo)$"
         
         found_numbers = re.findall(r'\d+', msg_lower)
         valid_class = next((n for n in found_numbers if n in TIMETABLE_LINKS), None)
@@ -135,16 +147,41 @@ Result dekhne ke liye Roll No likhein.
 
 ⏰ *TIMING:* 04:00 PM - 07:00 PM
 ━━━━━━━━━━━━━━━━━
-🏠 *Menu ke liye 'Hi' likhein*"""
+🏠 *Menu ke liye 'Hi' likhein>>Ya sahi opt chune<<😉*"""
 
-        # --- 5. MAIN MENU ---
-        else:
+        # --- 5. GREETINGS (Menu) ---
+        elif re.search(greet_pattern, msg_lower):
             return main_menu(current_notices.get('all', "Sab normal"))
+
+        # --- 6. AI & UNKNOWN WORD FILTER ---
+        else:
+            # Check for random gibberish (e.g., "akjsax,k")
+            # Agar word me vowels na ho ya wo bahut ajeeb ho to Sorry message
+            if len(msg_lower) > 3 and not any(v in msg_lower for v in 'aeiou') or len(msg_lower) > 15 and " " not in msg_lower:
+                return f"""❌ *SORRY!*
+━━━━━━━━━━━━━━━━━━━
+Mujhe ye samajh nahi aaya. 
+
+Please send *Menu*, *Start*, *Hi*, or *Hii* likhein menu ke liye.
+━━━━━━━━━━━━━━━━━━━"""
+            
+            try:
+                # AI Response for Study Doubts
+                response = model.generate_content(raw_msg)
+                ai_reply = response.text.replace("**", "").replace("*", "").strip()
+                return f"🤖 *AI Answer:*\n{ai_reply}\n\n🏠 *Menu ke liye 'Hi' likhein*"
+            except:
+                return f"""❌ *SORRY!*
+━━━━━━━━━━━━━━━━━━━
+Mujhe ye samajh nahi aaya🧐. 
+
+Please send *Menu*, *Start*, *Hi*, likhein menu ke liye.
+━━━━━━━━━━━━━━━━━━━"""
 
     except Exception:
         return main_menu(current_notices.get('all', "Sab normal"))
 
-# 🏛️ Function: Main Menu (OLD STYLE BACK ✅)
+# 🏛️ Function: Main Menu
 def main_menu(g_msg):
     n_box = ""
     if "Sab normal" not in g_msg:
@@ -165,7 +202,7 @@ def main_menu(g_msg):
 
 🟡 *QUERY*:- FOR DOUBT✨
 🟡 *RESULT*:-FOR RESULT✨
-🟡 *Application*:-FOR LEAVE REPORT✨
+🟡 *Application*:FOR LEAVE REPORT✨
 
 ━━━━━━━━━━━━━━━━━━"""
 
