@@ -1,106 +1,226 @@
 from flask import Flask, request
-from twilio.twiml.messaging_response import MessagingResponse
+import re
+import google.generativeai as genai
 
 app = Flask(__name__)
 
-@app.route("/bot", methods=['POST'])
-def bot():
-    # User ka message aayega (lowercase mein convert karke)
-    incoming_msg = request.values.get('Body', '').lower().strip()
+# =========================================================
+# ⚙️ 1. ADMIN SETTINGS & LINKS (Yahan Apne Links Dalein)
+# =========================================================
+FORM_LINK     = "https://forms.gle/GWipzdU8hbPxZF6dA"
+PHONE_NO      = "9898308806"
+WA_LINK       = f"https://wa.me/91{PHONE_NO}" 
+MAP_LINK      = "http://maps.google.com/?q=Prince+Academy+Surat"
+UPI_ID        = f"{PHONE_NO}@upi"
+
+# 🤖 YAHAN APNE SMART AI BOT KA DIRECT LINK DALEIN 👇
+SMART_AI_LINK = "https://wa.me/message/YOUR_AI_BOT_LINK" 
+
+# 🤖 GEMINI AI SETUP (In-Chat Doubt ke liye)
+GEMINI_API_KEY = "YAHAN_APNA_GEMINI_API_KEY_DALEIN"
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+# =========================================================
+# 📊 2. TUITION DATA
+# =========================================================
+STUDENT_RESULTS = {
+    '101': '👤 *Rahul Kumar (Class 10)*\n📐 Maths: 95\n🔬 Science: 90\n📖 English: 85\n📊 *Percentage: 90%*',
+    '102': '👤 *Sneha Gupta (Commerce)*\n💰 Accounts: 82\n📈 Economics: 88\n📝 B.St: 85\n📊 *Percentage: 85%*'
+}
+
+TIMETABLE_LINKS = {str(i): f"https://bit.ly/Abhay-Class{i}" for i in range(6, 13)}
+EXAM_LINKS      = {str(i): f"https://bit.ly/Exam-Class{i}" for i in range(6, 13)}
+
+current_notices = {str(i): "Sab normal" for i in range(6, 13)}
+current_notices['all'] = "Sab normal"
+
+@app.route('/whatsapp', methods=['GET'])
+def whatsapp_reply():
+    try:
+        raw_msg = request.args.get('msg', '')
+        if not raw_msg or not raw_msg.strip():
+            return main_menu(current_notices.get('all', "Sab normal"))
+
+        msg = raw_msg.strip()
+        msg_lower = msg.lower()
+
+        # 🛠️ ADMIN COMMAND
+        if msg_lower.startswith("set notice"):
+            parts = msg.split(" ", 3)
+            if len(parts) >= 4:
+                target = parts[2].lower()
+                current_notices[target] = parts[3]
+                return f"✅ Notice Updated for {target.upper()}!"
+
+        # 🧠 SMART PATTERNS
+        leave_pattern  = r"(leave|chutti|chuti|chuty|absent|absnt|bimar|sick|aplication|aply|absents|bukhar|chhuti|application)"
+        result_pattern = r"(result|reslt|rsult|marks|score|nambar|number|mark|roll|rol|no|resut)"
+        query_pattern  = r"(query|help|admi|addmi|fees|payment|locat|paisa|contact|address|form|detal|info|admission)"
+        
+        # 🤖 AI LINK DASHBOARD TRIGGER
+        ai_link_pattern = r"^(ai|smart ai|bot|chatgpt|link)$"
+        
+        # 🤖 IN-CHAT AI TRIGGER
+        ai_match = re.match(r"^(doubt|ask|summary|question|sawal|solve)\s+(.*)", msg_lower)
+
+        found_numbers = re.findall(r'\d+', msg_lower)
+        valid_class = next((n for n in found_numbers if n in TIMETABLE_LINKS), None)
+
+        # =====================================================
+        # 👇 BRANCHING LOGIC
+        # =====================================================
+
+        # --- 0. SMART AI LINK DASHBOARD (ADVANCED FEATURE) ---
+        if re.search(ai_link_pattern, msg_lower):
+            return f"""🧠 *ADVANCED SMART AI BOT* 🧠
+━━━━━━━━━━━━━━━━━━━
+Aapke har sawaal ka turant jawab! 🚀
+Maths, Science, ya koi bhi doubt ho, hamara Smart AI aapki madad karega.
+
+🔗 *DIRECT AI LINK:*
+👇 Click Here to Start
+{SMART_AI_LINK}
+
+💡 *In-Chat AI Option:* Aap yahan bhi apna doubt likh sakte hain.
+👉 Type: *Doubt [Aapka Sawal]*
+━━━━━━━━━━━━━━━━━━━
+🏠 *Menu ke liye 'Hi' likhein*"""
+
+        # --- 0.5 IN-CHAT AI DASHBOARD ---
+        elif ai_match:
+            question = ai_match.group(2)
+            try:
+                prompt = f"Tum Abhay Tuition Classes ke expert aur friendly teacher ho. Ek student ka sawal hai: '{question}'. Jawab clear, easy aur Hinglish (Hindi written in English alphabet) mein do taaki bache ko asani se samajh aaye."
+                response = model.generate_content(prompt)
+                ai_answer = response.text.strip()
+                
+                return f"""🤖 *SMART AI TEACHER*
+━━━━━━━━━━━━━━━━━━━
+📚 *Topic:* {question.title()}
+
+{ai_answer}
+━━━━━━━━━━━━━━━━━━━
+🔗 *Advanced AI ke liye Type karein: AI*
+🏠 _Menu ke liye 'Hi' bhejein_"""
+            except Exception as e:
+                return "❌ *AI Teacher Busy!* Abhi thoda load hai, kripya thodi der baad try karein ya direct link ke liye *'AI'* type karein."
+
+        # --- 1. LEAVE DASHBOARD ---
+        elif re.search(leave_pattern, msg_lower):
+            return f"""🤒 *LEAVE DASHBOARD*
+━━━━━━━━━━━━━━━━━━━
+⚠️ *Absent Today?*
+Agar aap aaj class nahi aa pa rahe, to niche link par form bharein.
+
+📝 *FILL APPLICATION:*
+👇 Click Here
+🔗 {FORM_LINK}
+
+✅ *Status:* Sir will be notified.
+━━━━━━━━━━━━━━━━━━━
+🏠 *Menu ke liye 'Hi' likhein*"""
+
+        # --- 2. RESULT DASHBOARD ---
+        elif re.search(result_pattern, msg_lower):
+            if found_numbers:
+                roll = found_numbers[0]
+                if roll in STUDENT_RESULTS:
+                    return f"""🏆 *RESULT DASHBOARD*
+━━━━━━━━━━━━━━━━━━━
+🆔 *Roll No:* {roll}
+{STUDENT_RESULTS[roll]}
+━━━━━━━━━━━━━━━━━━━
+🌟 *Keep Working Hard!*
+🏠 *Menu ke liye 'Hi' likhein*"""
+                else:
+                    return f"""❌ *ERROR*
+━━━━━━━━━━━━━━━━━━━
+Roll No *{roll}* ka record nahi mila.
+Kripya sahi number check karein.
+━━━━━━━━━━━━━━━━━━━"""
+            else:
+                return f"""❓ *INPUT REQUIRED*
+━━━━━━━━━━━━━━━━━━━
+Result dekhne ke liye Roll No likhein.
+👉 Example: *Result 101*
+━━━━━━━━━━━━━━━━━━━"""
+
+        # --- 3. HELP & QUERY DASHBOARD ---
+        elif re.search(query_pattern, msg_lower):
+            return f"""🤝 *HELP & SUPPORT*
+━━━━━━━━━━━━━━━━━
+📝 *ADMISSION FORM*
+🔗 https://bit.ly/Form
+
+💳 *FEES PAYMENT (UPI)*
+🆔 {UPI_ID}
+
+📍 *GOOGLE LOCATION*
+🔗 {MAP_LINK}
+
+📞 *CONTACT SIR*
+🔗 {WA_LINK}
+━━━━━━━━━━━━━━━━━
+🏠 *Menu ke liye 'Hi' likhein*"""
+
+        # --- 4. CLASS DASHBOARD ---
+        elif valid_class:
+            cls = valid_class
+            notice = current_notices.get(cls, "Sab normal")
+            n_box = ""
+            if "Sab normal" not in notice:
+                n_box = f"🚨 *NOTICE:* {notice.upper()}\n━━━━━━━━━━━━━━━━━━━\n"
+            
+            return f"""🎓 *CLASS {cls} DASHBOARD* 🎓
+━━━━━━━━━━━━━━━━━
+{n_box}📅 *TIME TABLE*
+👇 Click to View
+🔗 {TIMETABLE_LINKS[cls]}
+
+📝 *EXAM SCHEDULE*
+👇 Click to Download
+🔗 {EXAM_LINKS[cls]}
+
+⏰ *TIMING:* 04:00 PM - 07:00 PM
+━━━━━━━━━━━━━━━━━
+🏠 *Menu ke liye 'Hi' likhein*"""
+
+        # --- 5. GREETINGS & UNKNOWN ---
+        else:
+            if msg_lower in ['hi', 'hello', 'hii', 'hey', 'namaste', 'menu', 'start', 'helo']:
+                return main_menu(current_notices.get('all', "Sab normal"))
+            else:
+                sorry_text = "❌ *SORRY!*\n━━━━━━━━━━━━━━━━━━━\nMujhe ye samajh nahi aaya. 😅\n\nPlease niche diye gaye options chuniye ya *Hi* likhein."
+                return f"{sorry_text}\n\n{main_menu(current_notices.get('all', 'Sab normal'))}"
+
+    except Exception:
+        return main_menu(current_notices.get('all', "Sab normal"))
+
+# 🏛️ Function: Main Menu
+def main_menu(g_msg):
+    n_box = ""
+    if "Sab normal" not in g_msg:
+        n_box = f"🚨 *NOTICE:* {g_msg.upper()}\n━━━━━━━━━━━━━━━━━━━\n"
     
-    # Twilio ka response object create karein
-    resp = MessagingResponse()
-    msg = resp.message()
+    return f"""{n_box}🏛️ *ABHAY TUITION CLASSES* 🏛️
+━━━━━━━━━━━━━━━━━━
+👋 *Namaste! Welcome back✨.*
+👇 *Apna Option Chuniye:*
 
-    # --- CONTENT VARIABLES (Yahan apne Links update karein) ---
-    VISITING_CARD_LINK = "https://example.com/visiting-card"  # Apna asli link yahan dalein
-    RATE_PDF_LINK = "https://drive.google.com/file/d/your-pdf-link" # Apni PDF ka link
-    CATALOG_LINK = "https://wa.me/c/917046769047" # WhatsApp Catalog link
-    
-    # --- LOGIC ---
+6️⃣  *Class 6*
+7️⃣  *Class 7*
+8️⃣  *Class 8*
+9️⃣  *Class 9*
+🔟  *Class 10*
+1️⃣1️⃣ *Class 11*
+1️⃣2️⃣ *Class 12*
 
-    # 1. MAIN MENU (Agar koi 'hi', 'hello', 'menu' likhe)
-    if incoming_msg in ['hi', 'hello', 'menu', 'start', 'namaste']:
-        response_text = (
-            "✨🙏 *Namaste! Welcome to Pandey Colour* 🎨\n"
-            "t_\"Ghar Aisa, Jo Sabka Mann Moh Le\"_\n\n"
-            "👤 **Prop:** Markandey Pandey\n"
-            f"🪪 **Digital Visiting Card:** {VISITING_CARD_LINK}\n\n"
-            "👇 **Neeche diye gaye number reply karein:**\n\n"
-            "1️⃣ 💰 **Rates & Estimate** (Kharcha)\n"
-            "2️⃣ 📞 **Contact & Address** (Sampark)\n"
-            "3️⃣ 🎨 **Fantak / Shade Card** (Colour Pasand)\n"
-            "4️⃣ 🖼️ **Latest Designs** (Album)\n"
-            "5️⃣ 💸 **Payment Details**\n\n"
-            "_Reply with 1, 2, 3, 4, or 5_"
-        )
-        msg.body(response_text)
+🔷 *QUERY*:- Admission/Fees details✨
+🔷 *RESULT*:- Result check karein✨
+🔷 *Application*:- Leave form bharein✨
+🧠 *SMART AI*:- Direct Link ke liye likhein *'AI'*✨
+━━━━━━━━━━━━━━━━━━"""
 
-    # 2. OPTION 1: RATES
-    elif incoming_msg == '1':
-        response_text = (
-            "📊 **Pandey Colour - Rate List**\n\n"
-            "🔹 **Plastic Paint:** ₹12 - ₹18 / sq.ft\n"
-            "🔹 **Royal Play Texture:** ₹25 - ₹40 / sq.ft\n"
-            "🔹 **PU Polish:** ₹XXX / sq.ft\n"
-            "🔹 **Waterproofing:** Site visit ke baad\n\n"
-            f"📄 **Download Full Rate List:** {RATE_PDF_LINK}\n\n"
-            "📞 **Call for Estimate:** 70467 69047"
-        )
-        msg.body(response_text)
-
-    # 3. OPTION 2: CONTACT
-    elif incoming_msg == '2':
-        response_text = (
-            "📞 **Humse Sampark Karein**\n\n"
-            "👨‍💼 **Markandey Pandey** (Senior Contractor)\n"
-            "📱 +91 70467 69047\n"
-            "📱 +91 90167 21639\n\n"
-            "📍 **Address:**\n"
-            "211/-2 Krishnakunj Society,\n"
-            "Palanpur Jakatnaka, Surat.\n\n"
-            "🕐 **Time:** 9:00 AM - 8:00 PM"
-        )
-        msg.body(response_text)
-        # Location (Optional - alag message mein bhej sakte hain)
-        # msg.media("https://maps.google.com/...") 
-
-    # 4. OPTION 3: FANTAK (COLORS)
-    elif incoming_msg == '3':
-        response_text = (
-            "🎨 **Apne Sapno Ka Colour Chunein**\n\n"
-            "Asian Paints ya Nerolac ke shades dekhne ke liye link open karein:\n\n"
-            "🌈 **Digital Shade Card:**\n"
-            "https://www.asianpaints.com/catalogue/colour-catalogue.html\n\n"
-            "💡 *Tip:* Pasand karke screenshot bhejein!"
-        )
-        msg.body(response_text)
-
-    # 5. OPTION 4: DESIGNS
-    elif incoming_msg == '4':
-        response_text = (
-            "🖼️ **Hamare Latest Designs** ✨\n\n"
-            "Humne Royal Play, Texture aur PU Polish ke kayi premium projects kiye hain.\n\n"
-            f"📸 **Photos Dekhein:** {CATALOG_LINK}\n\n"
-            "🎥 Video call ke liye abhi call karein!"
-        )
-        msg.body(response_text)
-
-    # 6. OPTION 5: PAYMENT
-    elif incoming_msg == '5':
-        response_text = (
-            "💸 **Payment Details**\n\n"
-            "🏦 **UPI ID:** `7046769047@ybl`\n"
-            "📱 **GPay / PhonePe:** 70467 69047\n\n"
-            "⚠️ *Payment ka screenshot zaroor bhejein.*"
-        )
-        msg.body(response_text)
-
-    # DEFAULT MESSAGE (Agar kuch aur type kare)
-    else:
-        msg.body("❌ Galat option. Main Menu ke liye *'Hi'* likh kar bhejein.")
-
-    return str(resp)
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
