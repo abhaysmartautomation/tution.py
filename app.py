@@ -5,7 +5,7 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # =========================================================
-# ⚙️ 1. ADMIN SETTINGS & LINKS (Yahan Apne Links Dalein)
+# ⚙️ 1. ADMIN SETTINGS & LINKS
 # =========================================================
 FORM_LINK     = "https://forms.gle/GWipzdU8hbPxZF6dA"
 PHONE_NO      = "9898308806"
@@ -13,10 +13,11 @@ WA_LINK       = f"https://wa.me/91{PHONE_NO}"
 MAP_LINK      = "http://maps.google.com/?q=Prince+Academy+Surat"
 UPI_ID        = f"{PHONE_NO}@upi"
 
-# 🤖 YAHAN APNE SMART AI BOT KA DIRECT LINK DALEIN 👇
-SMART_AI_LINK = "https://wa.me/message/YOUR_AI_BOT_LINK" 
+# 🚀 AAPKA ADVANCE SMART AI BOT LINK YAHAN HAI 👇
+SMART_AI_LINK = "https://smart-ai-web.vercel.app/" 
 
 # 🤖 GEMINI AI SETUP (In-Chat Doubt ke liye)
+# Yahan apni asli API key daalna mat bhoolna!
 GEMINI_API_KEY = "YAHAN_APNA_GEMINI_API_KEY_DALEIN"
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
@@ -57,12 +58,10 @@ def whatsapp_reply():
         leave_pattern  = r"(leave|chutti|chuti|chuty|absent|absnt|bimar|sick|aplication|aply|absents|bukhar|chhuti|application)"
         result_pattern = r"(result|reslt|rsult|marks|score|nambar|number|mark|roll|rol|no|resut)"
         query_pattern  = r"(query|help|admi|addmi|fees|payment|locat|paisa|contact|address|form|detal|info|admission)"
-        
-        # 🤖 AI LINK DASHBOARD TRIGGER
         ai_link_pattern = r"^(ai|smart ai|bot|chatgpt|link)$"
         
-        # 🤖 IN-CHAT AI TRIGGER
-        ai_match = re.match(r"^(doubt|ask|summary|question|sawal|solve)\s+(.*)", msg_lower)
+        # 🤖 IN-CHAT AI TRIGGER (Bug Fixed: Ab multi-line doubts bhi accept karega)
+        ai_match = re.match(r"^(doubt|ask|summary|question|sawal|solve)\s+(.*)", msg_lower, re.DOTALL)
 
         found_numbers = re.findall(r'\d+', msg_lower)
         valid_class = next((n for n in found_numbers if n in TIMETABLE_LINKS), None)
@@ -71,7 +70,7 @@ def whatsapp_reply():
         # 👇 BRANCHING LOGIC
         # =====================================================
 
-        # --- 0. SMART AI LINK DASHBOARD (ADVANCED FEATURE) ---
+        # --- 0. SMART AI LINK DASHBOARD (AAPKA VERCEL LINK) ---
         if re.search(ai_link_pattern, msg_lower):
             return f"""🧠 *ADVANCED SMART AI BOT* 🧠
 ━━━━━━━━━━━━━━━━━━━
@@ -89,7 +88,7 @@ Maths, Science, ya koi bhi doubt ho, hamara Smart AI aapki madad karega.
 
         # --- 0.5 IN-CHAT AI DASHBOARD ---
         elif ai_match:
-            question = ai_match.group(2)
+            question = ai_match.group(2).strip()
             try:
                 prompt = f"Tum Abhay Tuition Classes ke expert aur friendly teacher ho. Ek student ka sawal hai: '{question}'. Jawab clear, easy aur Hinglish (Hindi written in English alphabet) mein do taaki bache ko asani se samajh aaye."
                 response = model.generate_content(prompt)
@@ -97,14 +96,14 @@ Maths, Science, ya koi bhi doubt ho, hamara Smart AI aapki madad karega.
                 
                 return f"""🤖 *SMART AI TEACHER*
 ━━━━━━━━━━━━━━━━━━━
-📚 *Topic:* {question.title()}
+📚 *Topic:* Sawaal ka Jawab
 
 {ai_answer}
 ━━━━━━━━━━━━━━━━━━━
-🔗 *Advanced AI ke liye Type karein: AI*
+🔗 *Advance AI Link ke liye Type karein: AI*
 🏠 _Menu ke liye 'Hi' bhejein_"""
             except Exception as e:
-                return "❌ *AI Teacher Busy!* Abhi thoda load hai, kripya thodi der baad try karein ya direct link ke liye *'AI'* type karein."
+                return f"❌ *AI Teacher Busy!* Abhi thoda load hai. Kripya is link par jaakar apna sawaal poochein: {SMART_AI_LINK}"
 
         # --- 1. LEAVE DASHBOARD ---
         elif re.search(leave_pattern, msg_lower):
